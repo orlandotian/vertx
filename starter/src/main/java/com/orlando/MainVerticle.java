@@ -9,10 +9,10 @@ public class MainVerticle extends VerticleStarter {
 
   private final Logger logger = LoggerFactory.getLogger(getClass().getSimpleName());
 
+
   @Override
   public void start(Future<Void> startFuture) throws Exception {
     super.start(startFuture);
-
     vertx.createHttpServer().requestHandler(router).listen(8888, http -> {
       if (http.succeeded()) {
         startFuture.complete();

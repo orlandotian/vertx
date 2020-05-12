@@ -1,11 +1,23 @@
 package com.orlando.starter;
 
+import io.vertx.ext.mongo.MongoClient;
+
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
 public class Component {
   private static HashMap<String, Object> beans = new HashMap<>();
   private static HashMap<String, Method> requests = new HashMap<>();
+
+  private static MongoClient mongoClient;
+
+  public static MongoClient getMongoClient() {
+    return mongoClient;
+  }
+
+  public static void setMongoClient(MongoClient mongoClient) {
+    Component.mongoClient = mongoClient;
+  }
 
   public static Object getComponent(String name) {
     return beans.get(name);
@@ -19,7 +31,7 @@ public class Component {
     return requests.get(path);
   }
 
-  public static void putRequests(String path,  Method method) {
+  public static void putRequests(String path, Method method) {
     requests.put(path, method);
   }
 }

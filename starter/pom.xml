@@ -50,13 +50,17 @@
       <groupId>io.vertx</groupId>
       <artifactId>vertx-core</artifactId>
     </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-pg-client</artifactId>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>io.vertx</groupId>-->
+<!--      <artifactId>vertx-pg-client</artifactId>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-web-templ-thymeleaf</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-mongo-client</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
