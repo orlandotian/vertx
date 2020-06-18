@@ -17,6 +17,9 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.templ.thymeleaf.ThymeleafTemplateEngine;
+import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.PoolOptions;
+import io.vertx.sqlclient.SqlConnection;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
 import org.reflections.scanners.MethodAnnotationsScanner;
@@ -38,14 +41,20 @@ public class VerticleStarter extends AbstractVerticle {
   protected ThymeleafTemplateEngine engine;
   protected Router router;
   protected MongoClient mongo;
+  protected PgPool postgres;
 
+  String postgresqlUri = "postgresql://master:zaq1xsw2@127.0.0.1:5432/game";
+  String mongoUri = "mongodb://kongfu:zaq1xsw2@127.0.0.1:27017/kongfu?authSource=admin";
 
   @Override
   public void init(Vertx vertx, Context context) {
     super.init(vertx, context);
     engine = ThymeleafTemplateEngine.create(vertx);
     router = Router.router(vertx);
-    mongo = MongoClient.createShared(vertx, new JsonObject().put("db_name", "kongfu").put("connection_string", "mongodb://kongfu:zaq1xsw2@127.0.0.1:27017/kongfu?authSource=admin"));
+    mongo = MongoClient.createShared(vertx, new JsonObject().put("db_name", "kongfu").put("connection_string", mongoUri));
+
+    PoolOptions poolOptions = new PoolOptions().setMaxSize(5);
+    postgres = PgPool.pool(vertx, postgresqlUri, poolOptions);
   }
 
   @Override
@@ -62,6 +71,10 @@ public class VerticleStarter extends AbstractVerticle {
 
   private void loadComponent() throws Exception {
     Component.setMongoClient(mongo);
+    Component.setPgClient(postgres);
+    postgres.query("SELECT * FROM maps ORDER BY id ASC ").execute(re -> {
+      re.result();
+    });
     Reflections reflections = new Reflections("com.orlando",
       new SubTypesScanner(), new MethodAnnotationsScanner(),
       new TypeAnnotationsScanner(), new FieldAnnotationsScanner());
@@ -70,16 +83,16 @@ public class VerticleStarter extends AbstractVerticle {
     loadAutowired(reflections);
   }
 
+  /**
+   * 装载控制器，根据 requestmapping 绑定路由
+   * @param reflections
+   * @throws Exception
+   */
   private void loadController(Reflections reflections) throws Exception {
     Set<Class<?>> controllers = reflections.getTypesAnnotatedWith(Controller.class);
     for (Class<?> controller : controllers) {
       Component.putComponents(controller.getName(), controller.newInstance());
     }
-    controllers = reflections.getTypesAnnotatedWith(RestController.class);
-    for (Class<?> controller : controllers) {
-      Component.putComponents(controller.getName(), controller.newInstance());
-    }
-
     Set<Method> requestMethods = reflections.getMethodsAnnotatedWith(RequestMapping.class);
     for (Method method : requestMethods) {
       if (method.getReturnType() != Void.TYPE) {
@@ -89,7 +102,7 @@ public class VerticleStarter extends AbstractVerticle {
         throw new RuntimeException("Request method not public, Class: " + method.getDeclaringClass().getName() + "$" + method.getName());
       }
       RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
-      //
+
       Component.putRequests(requestMapping.value(), method);
       // 加载路由
       for (HttpMethod requestMethod : requestMapping.method()) {
@@ -129,10 +142,14 @@ public class VerticleStarter extends AbstractVerticle {
     }
   }
 
+  /**
+   * vertx路由回调，反射对应实例及方法
+   * @param rct
+   */
   private void callback(RoutingContext rct) {
-    Method method = Component.getMappingMethod(rct.request().path());
+    Method method = Component.getMappingMethod(rct.currentRoute().getPath());
     Object o = Component.getComponent(method.getDeclaringClass().getName());
-    if (o == null) {
+    if (method == null || o == null) {
       rct.response().setStatusCode(503).end("Internal server error");
     }
     try {

@@ -1,6 +1,7 @@
 package com.orlando.starter;
 
 import io.vertx.ext.mongo.MongoClient;
+import io.vertx.pgclient.PgPool;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -10,6 +11,7 @@ public class Component {
   private static HashMap<String, Method> requests = new HashMap<>();
 
   private static MongoClient mongoClient;
+  private static PgPool pgClient;
 
   public static MongoClient getMongoClient() {
     return mongoClient;
@@ -17,6 +19,14 @@ public class Component {
 
   public static void setMongoClient(MongoClient mongoClient) {
     Component.mongoClient = mongoClient;
+  }
+
+  public static void setPgClient(PgPool pgClient) {
+    Component.pgClient = pgClient;
+  }
+
+  public static PgPool getPgClient() {
+    return pgClient;
   }
 
   public static Object getComponent(String name) {

@@ -4,13 +4,13 @@ import com.orlando.bean.Player;
 import com.orlando.repository.IPlayerRepository;
 import com.orlando.starter.RCTCallback;
 import com.orlando.starter.annotation.Autowired;
+import com.orlando.starter.annotation.Controller;
 import com.orlando.starter.annotation.RequestMapping;
-import com.orlando.starter.annotation.RestController;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonObject;
 
-@RestController
+@Controller
 public class ApiController {
 
   @Autowired
@@ -34,5 +34,13 @@ public class ApiController {
       }
     });
 
+  }
+
+  @RequestMapping(value = "/check/:id", method = HttpMethod.GET)
+  public void checkInde(HttpServerRequest request, RCTCallback callback) {
+    String id = request.getParam("id");
+        playerRepository.find(new JsonObject().put("_id", id), rt -> {
+          callback.done(rt.result());
+        });
   }
 }
